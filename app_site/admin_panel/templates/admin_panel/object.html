@@ -1,0 +1,9 @@
+{% if reservation_list %}
+    <ul>
+    {% for reservation in reservation_list %}
+        <li><a href="{% url 'admin_panel:reservation' city.id object.id reservation.id %}">{{ reservation }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No reservations are available.</p>
+{% endif %}
