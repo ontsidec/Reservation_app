@@ -7,6 +7,9 @@ import datetime
 class City(models.Model):
     city_name = models.CharField(max_length=30, unique=True)
 
+    class Meta:
+        verbose_name_plural = "Cities"
+
     def __str__(self):
         return self.city_name
 
@@ -22,8 +25,8 @@ class Object(models.Model):
     city = models.ForeignKey(City, on_delete=models.CASCADE)
     object_name = models.CharField(max_length=100)
     available = models.BooleanField(default=True)
-    start_date = models.DateField('Occupied from', default=datetime.date.today)
-    end_date = models.DateField('Occupied to', default=datetime.date.today)
+    start_date = models.DateField('Available from', default=datetime.date.today)
+    end_date = models.DateField('Available to', default=datetime.date.today)
     reservations = models.ManyToManyField(Client, through='Reservation')
 
     def __str__(self):
@@ -38,9 +41,22 @@ class Reservation(models.Model):
 
     def __str__(self):
         return '%s - %s' % (self.start_date, self.end_date)
+
     def save(self, *args, **kwargs):
         if Reservation.objects.filter(Q(object=self.object), Q(object__available=False)):
             raise IntegrityError("Object is not available!")
+        elif Object.objects.filter(
+            Q(id=self.object.pk),
+            Q(start_date__gt=self.start_date)
+            | Q(end_date__lt=self.start_date)
+        ):
+            raise IntegrityError("This reservation start date is not available for this object!")
+        elif Object.objects.filter(
+            Q(id=self.object.pk),
+            Q(start_date__gt=self.end_date)
+            | Q(end_date__lt=self.end_date)
+        ):
+            raise IntegrityError("This reservation end date is not available for this object!")
         elif Reservation.objects.filter(
             Q(object=self.object),
             Q(start_date__range=(self.start_date, self.end_date))
@@ -48,13 +64,7 @@ class Reservation(models.Model):
             | Q(start_date__lte=self.start_date, end_date__gte=self.end_date)
         ):
             raise IntegrityError("Object booked for this term!")
-        # TODO Poprawić warunek
-        elif Reservation.objects.filter(
-            Q(object=self.object),
-            ~Q(object__start_date__range=(self.start_date, self.end_date))
-            | ~Q(object__end_date__range=(self.start_date, self.end_date))
-            | Q(object__start_date__lte=self.start_date, object__end_date__gte=self.end_date)
-        ):
-            raise IntegrityError("Object is not available for this term!")
+        elif self.start_date > self.end_date:
+            raise IntegrityError("Object reservation term is not correct!")
         else:
             super(Reservation, self).save(*args, **kwargs)

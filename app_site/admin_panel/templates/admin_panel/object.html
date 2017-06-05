@@ -1,3 +1,21 @@
+<h1>{{ object.object_name }}</h1>
+<li><a href="{% url 'admin_panel:city' city.id %}">Back</a></li><br>
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+Object available from {{ object.start_date }} to {{ object.end_date }}<br>
+
+<form type="get" action="." style="margin: 0">
+    Enter reservation start date:
+    <input  id="start_time" type="date" name="start" min="{{ today }}" value="{{ today }}">
+    Enter reservation end date:
+    <input  id="end_time" type="date" name="end" min="{{ today }}" value="{{ today }}">
+    Nickname:
+    <input  id="nickname" type="text" name="name">
+    <button id="search_submit" type="submit" >Submit</button>
+</form>
+
+
+
 {% if reservation_list %}
     <ul>
     {% for reservation in reservation_list %}
